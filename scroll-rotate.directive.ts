@@ -23,6 +23,7 @@ export class ScrollRotateDirective implements AfterViewInit {
   ngAfterViewInit(): void {
     this.el.nativeElement.style.transform = this.scaleFormatString;
 
+    // simplified solution to update everything, should not be used in production! (a lot of overhead)
     const fixedUpdate = interval(this.FIXED_TIME_STEP_SECONDS * 1000);
     fixedUpdate.subscribe(() => this.updateRotation());
   }
@@ -31,22 +32,37 @@ export class ScrollRotateDirective implements AfterViewInit {
   onMouseWheel(deltaY: number): void {
     // normalize deltaY and apply it
     if (deltaY !== 0) {
+      // flip deltaY as it seems unnatural to rotate the other way
       deltaY *= -1;
+
       deltaY /= Math.abs(deltaY);
+
+      // increase velocity and set a start velocity for decrease lerp
       this.rotVelocity += this.SCROLL_SENSITIVITY * deltaY;
       this.startRotVel = this.rotVelocity;
+
+      // reset timer
       this.timer = 0;
     }
     this.updateRotation();
   }
 
   updateRotation(): void {
-    // very imperfect drag, fix if nothing better to do
     this.timer += this.FIXED_TIME_STEP_SECONDS;
+
+    // increase time to reach zero with start velocity
     const dragModifier = (1 + Math.abs(this.startRotVel * 0.1));
+
+    // calculate current lerp "position" (between 0 and 1)
     const lerpValue = Math.min(this.timer/(this.DRAG_DELAY * dragModifier), 1);
+
+    // use lerp to decrease velocity towards 0 (this work independent of negative and positive velocity)
     this.rotVelocity = ScrollRotateDirective.lerp(this.startRotVel, 0, lerpValue);
+
+    // apply velocity to rotation
     this.degreeRotate += this.rotVelocity;
+
+    // apply rotation to DOM
     this.el.nativeElement.style.transform = `rotateZ(${this.degreeRotate}deg)` + this.scaleFormatString;
   }
 
