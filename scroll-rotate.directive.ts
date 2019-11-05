@@ -1,5 +1,5 @@
 import {AfterViewInit, Directive, ElementRef, HostListener} from '@angular/core';
-import {interval} from "rxjs";
+import {interval, Subscription} from "rxjs";
 
 @Directive({
   selector: '[appScrollRotate]'
@@ -10,20 +10,21 @@ export class ScrollRotateDirective implements AfterViewInit {
   readonly SCROLL_SENSITIVITY = 3;
   readonly FIXED_TIME_STEP_SECONDS = 0.01667; // approximate 60 fps
 
+  // source: https://en.wikipedia.org/wiki/Linear_interpolation
+  static lerp(from: number, to: number, time: number): number {
+    return (1 - time) * from + time * to;
+  }
+
   degreeRotate = 0;
   rotVelocity = 0;
   startRotVel = 0;
   timer = 0;
 
+  updateSubscription: Subscription;
 
   constructor(private el: ElementRef) { }
 
-  ngAfterViewInit(): void {
-
-    // simplified solution to update everything, should not be used in production! (a lot of overhead)
-    const fixedUpdate = interval(this.FIXED_TIME_STEP_SECONDS * 1000);
-    fixedUpdate.subscribe(() => this.updateRotation());
-  }
+  ngAfterViewInit(): void { }
 
   @HostListener('document:wheel', ['$event.deltaY'])
   onMouseWheel(deltaY: number): void {
@@ -41,10 +42,17 @@ export class ScrollRotateDirective implements AfterViewInit {
       // reset timer
       this.timer = 0;
     }
-    this.updateRotation();
+
+    // unsubscribe to previous update loop if it exist
+    this.unsubscribeUpdate();
+
+    // create an update loop to update element state
+    const fixedUpdate = interval(this.FIXED_TIME_STEP_SECONDS * 1000);
+    this.updateSubscription = fixedUpdate.subscribe(() => this.updateRotation());
   }
 
   updateRotation(): void {
+    console.log('update');
     this.timer += this.FIXED_TIME_STEP_SECONDS;
 
     // increase time to reach zero with start velocity
@@ -61,11 +69,15 @@ export class ScrollRotateDirective implements AfterViewInit {
 
     // apply rotation to DOM
     this.el.nativeElement.style.transform = `rotateZ(${this.degreeRotate}deg)`;
+
+    if (lerpValue === 1) {
+      this.unsubscribeUpdate();
+    }
   }
 
-  // source: https://en.wikipedia.org/wiki/Linear_interpolation
-  static lerp(from: number, to: number, time: number): number {
-    return (1 - time) * from + time * to;
+  unsubscribeUpdate() {
+    if (this.updateSubscription) {
+      this.updateSubscription.unsubscribe();
+    }
   }
-
 }
