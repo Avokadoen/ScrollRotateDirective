@@ -7,7 +7,7 @@ import {interval, Subscription} from "rxjs";
 export class ScrollRotateDirective implements AfterViewInit {
 
   readonly DRAG_DELAY = 1;
-  readonly SCROLL_SENSITIVITY = 3;
+  readonly SCROLL_SENSITIVITY = 1;
   readonly FIXED_TIME_STEP_SECONDS = 0.01667; // approximate 60 fps
 
   // source: https://en.wikipedia.org/wiki/Linear_interpolation
@@ -28,20 +28,21 @@ export class ScrollRotateDirective implements AfterViewInit {
 
   @HostListener('document:wheel', ['$event.deltaY'])
   onMouseWheel(deltaY: number): void {
-    // normalize deltaY and apply it
-    if (deltaY !== 0) {
-      // flip deltaY as it seems unnatural to rotate the other way
-      deltaY *= -1;
-
-      deltaY /= Math.abs(deltaY);
-
-      // increase velocity and set a start velocity for decrease lerp
-      this.rotVelocity += this.SCROLL_SENSITIVITY * deltaY;
-      this.startRotVel = this.rotVelocity;
-
-      // reset timer
-      this.timer = 0;
+    // ignore events with no change
+    if (deltaY === 0) {
+      return;
     }
+
+    // flip deltaY as it seems unnatural to rotate the other way
+    deltaY *= -1;
+
+    // increase velocity and set a start velocity for decrease lerp
+    this.rotVelocity += this.SCROLL_SENSITIVITY * deltaY;
+    this.startRotVel = this.rotVelocity;
+
+    // reset timer
+    this.timer = 0;
+
 
     // unsubscribe to previous update loop if it exist
     this.unsubscribeUpdate();
@@ -79,4 +80,5 @@ export class ScrollRotateDirective implements AfterViewInit {
       this.updateSubscription.unsubscribe();
     }
   }
+
 }
