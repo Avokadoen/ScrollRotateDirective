@@ -52,7 +52,6 @@ export class ScrollRotateDirective implements AfterViewInit {
   }
 
   updateRotation(): void {
-    console.log('update');
     this.timer += this.FIXED_TIME_STEP_SECONDS;
 
     // increase time to reach zero with start velocity
