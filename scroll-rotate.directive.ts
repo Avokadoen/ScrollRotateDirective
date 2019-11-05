@@ -10,8 +10,6 @@ export class ScrollRotateDirective implements AfterViewInit {
   readonly SCROLL_SENSITIVITY = 3;
   readonly FIXED_TIME_STEP_SECONDS = 0.01667; // approximate 60 fps
 
-  scaleFormatString: string;
-
   degreeRotate = 0;
   rotVelocity = 0;
   startRotVel = 0;
@@ -21,7 +19,6 @@ export class ScrollRotateDirective implements AfterViewInit {
   constructor(private el: ElementRef) { }
 
   ngAfterViewInit(): void {
-    this.el.nativeElement.style.transform = this.scaleFormatString;
 
     // simplified solution to update everything, should not be used in production! (a lot of overhead)
     const fixedUpdate = interval(this.FIXED_TIME_STEP_SECONDS * 1000);
@@ -63,7 +60,7 @@ export class ScrollRotateDirective implements AfterViewInit {
     this.degreeRotate += this.rotVelocity;
 
     // apply rotation to DOM
-    this.el.nativeElement.style.transform = `rotateZ(${this.degreeRotate}deg)` + this.scaleFormatString;
+    this.el.nativeElement.style.transform = `rotateZ(${this.degreeRotate}deg)`;
   }
 
   // source: https://en.wikipedia.org/wiki/Linear_interpolation
